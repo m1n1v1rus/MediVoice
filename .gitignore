@@ -107,3 +107,6 @@ public/uploads/
 # package-lock.json
 # poetry.lock
 # pipenv.lock
+# Allow gitkeep files
+!.gitkeep
+!**/.gitkeep
