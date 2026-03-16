@@ -1,125 +1,348 @@
-const Appointment = require("../models/Appointment");
-const Doctor = require("../models/Doctor");
-const CallLog = require("../models/CallLog");
+const Appointment = require('../models/Appointment');
+const Doctor = require('../models/Doctor');
+const Patient = require('../models/Patient');
+const { APPOINTMENT_STATUS } = require('../config/constants');
 
-exports.book = async (req, res) => {
+// GET /api/appointments — admin, filter by date/status/phone/doctor
+const getAppointments = async (req, res, next) => {
   try {
-    const { patientName, phoneNumber, doctorId, date, time, symptoms, language, priorityLevel } = req.body;
-
-    const doctor = await Doctor.findById(doctorId);
-    if (!doctor) return res.status(404).json({ error: "Doctor not found" });
-
-    const daySlots = doctor.availableSlots.get(date);
-    if (!daySlots) return res.status(400).json({ error: "No slots on this date" });
-
-    const slot = daySlots.find((s) => s.time === time && !s.isBooked);
-    if (!slot) return res.status(409).json({ error: "Slot not available" });
-
-    slot.isBooked = true;
-    doctor.availableSlots.set(date, daySlots);
-    await doctor.save();
-
-    const appointment = await Appointment.create({
-      patientName, phoneNumber, doctorId, date, time,
-      symptoms, language, priorityLevel: priorityLevel || "normal",
-      confirmationSent: true,
-    });
-
-    const populated = await appointment.populate("doctorId", "name specialization room");
-
-    await CallLog.create({
-      phoneNumber, language, intent: "book",
-      symptomsDetected: symptoms ? symptoms.split(",") : [],
-      doctorRecommended: doctor.name, outcome: "booked",
-    });
-
-    res.status(201).json({ appointment: populated, message: "Appointment booked successfully" });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-};
-
-exports.getAll = async (req, res) => {
-  try {
-    const { status, date, doctorId } = req.query;
+    const { date, status, phone, doctorId, page = 1, limit = 50 } = req.query;
     const filter = {};
-    if (status) filter.status = status;
+
     if (date) filter.date = date;
+    if (status) filter.status = status;
+    if (phone) filter.patientPhone = phone;
     if (doctorId) filter.doctorId = doctorId;
 
-    const appointments = await Appointment.find(filter)
-      .populate("doctorId", "name specialization room")
-      .sort({ createdAt: -1 })
-      .lean();
-    res.json(appointments);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [appointments, total] = await Promise.all([
+      Appointment.find(filter)
+        .sort({ date: -1, time: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('doctorId', 'name specialization room')
+        .lean(),
+      Appointment.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      count: appointments.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / parseInt(limit)),
+      data: appointments,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.cancel = async (req, res) => {
+// GET /api/appointments/:id
+const getAppointmentById = async (req, res, next) => {
   try {
-    const appt = await Appointment.findById(req.params.id);
-    if (!appt) return res.status(404).json({ error: "Appointment not found" });
+    const appointment = await Appointment.findById(req.params.id)
+      .populate('doctorId', 'name specialization room fee')
+      .lean();
 
-    const doctor = await Doctor.findById(appt.doctorId);
-    if (doctor) {
-      const daySlots = doctor.availableSlots.get(appt.date);
-      if (daySlots) {
-        const slot = daySlots.find((s) => s.time === appt.time);
-        if (slot) slot.isBooked = false;
-        doctor.availableSlots.set(appt.date, daySlots);
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    res.json({ success: true, data: appointment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GET /api/appointments/patient/:phone
+const getPatientAppointments = async (req, res, next) => {
+  try {
+    const appointments = await Appointment.find({
+      patientPhone: req.params.phone,
+    })
+      .sort({ date: -1, time: -1 })
+      .populate('doctorId', 'name specialization room')
+      .lean();
+
+    res.json({ success: true, count: appointments.length, data: appointments });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /api/appointments — MAIN BOOKING ENDPOINT (AI service calls this)
+const createAppointment = async (req, res, next) => {
+  try {
+    const { patientName, patientPhone, doctorId, doctorName, date, time, symptoms, bookingType, sessionId } = req.body;
+
+    // 1. Check if doctor exists and is available
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ success: false, message: 'Doctor not found' });
+    }
+    if (!doctor.isAvailable) {
+      return res.status(400).json({ success: false, message: 'Doctor is not available' });
+    }
+
+    // 2. Check for duplicate booking (same doctor, date, time)
+    const existingSlot = await Appointment.findOne({
+      doctorId,
+      date,
+      time,
+      status: { $in: [APPOINTMENT_STATUS.BOOKED, APPOINTMENT_STATUS.CONFIRMED] },
+    });
+
+    if (existingSlot) {
+      return res.status(409).json({
+        success: false,
+        message: `This slot (${time}) is already booked. Please choose another time.`,
+      });
+    }
+
+    // 3. Check for duplicate patient booking (same patient, same doctor, same date)
+    const duplicatePatient = await Appointment.findOne({
+      patientPhone,
+      doctorId,
+      date,
+      status: { $in: [APPOINTMENT_STATUS.BOOKED, APPOINTMENT_STATUS.CONFIRMED] },
+    });
+
+    if (duplicatePatient) {
+      return res.status(409).json({
+        success: false,
+        message: 'Patient already has an appointment with this doctor on this date.',
+        existingAppointment: duplicatePatient,
+      });
+    }
+
+    // 4. Create appointment
+    const appointment = await Appointment.create({
+      patientName,
+      patientPhone,
+      doctorId,
+      doctorName: doctorName || doctor.name,
+      date,
+      time,
+      symptoms: symptoms || [],
+      bookingType: bookingType || 'by_symptom',
+      sessionId: sessionId || '',
+      status: APPOINTMENT_STATUS.BOOKED,
+    });
+
+    // 5. Update doctor's slot as booked (if using availableSlots map)
+    if (doctor.availableSlots && doctor.availableSlots.has(date)) {
+      const slots = doctor.availableSlots.get(date);
+      const slotIndex = slots.findIndex((s) => s.time === time);
+      if (slotIndex !== -1) {
+        slots[slotIndex].isBooked = true;
+        slots[slotIndex].appointmentId = appointment._id;
+        doctor.availableSlots.set(date, slots);
         await doctor.save();
       }
     }
 
-    appt.status = "cancelled";
-    await appt.save();
+    // 6. Update or create patient record
+    await Patient.findOneAndUpdate(
+      { phone: patientPhone },
+      {
+        $set: { name: patientName, lastCallAt: new Date() },
+        $inc: { totalAppointments: 1 },
+        $setOnInsert: { phone: patientPhone },
+      },
+      { upsert: true, new: true }
+    );
 
-    await CallLog.create({ phoneNumber: appt.phoneNumber, intent: "cancel", outcome: "cancelled" });
+    // Populate doctor info for response
+    const populatedAppointment = await Appointment.findById(appointment._id)
+      .populate('doctorId', 'name specialization room fee')
+      .lean();
 
-    res.json({ message: "Appointment cancelled", appointment: appt });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    res.status(201).json({
+      success: true,
+      message: 'Appointment booked successfully',
+      data: populatedAppointment,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.reschedule = async (req, res) => {
+// PATCH /api/appointments/:id — update individual fields
+const updateAppointment = async (req, res, next) => {
   try {
-    const { newDate, newTime } = req.body;
-    const appt = await Appointment.findById(req.params.id);
-    if (!appt) return res.status(404).json({ error: "Appointment not found" });
+    const allowedUpdates = ['reminderSent', 'smsSent', 'whatsappSent', 'status', 'notes'];
+    const updates = {};
 
-    const doctor = await Doctor.findById(appt.doctorId);
-    if (!doctor) return res.status(404).json({ error: "Doctor not found" });
-
-    const oldSlots = doctor.availableSlots.get(appt.date);
-    if (oldSlots) {
-      const old = oldSlots.find((s) => s.time === appt.time);
-      if (old) old.isBooked = false;
-      doctor.availableSlots.set(appt.date, oldSlots);
+    for (const key of allowedUpdates) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key];
+      }
     }
 
-    const newSlots = doctor.availableSlots.get(newDate);
-    if (!newSlots) return res.status(400).json({ error: "No slots on new date" });
-    const target = newSlots.find((s) => s.time === newTime && !s.isBooked);
-    if (!target) return res.status(409).json({ error: "New slot not available" });
+    const appointment = await Appointment.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true,
+    });
 
-    target.isBooked = true;
-    doctor.availableSlots.set(newDate, newSlots);
-    await doctor.save();
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
 
-    appt.date = newDate;
-    appt.time = newTime;
-    appt.status = "rescheduled";
-    await appt.save();
-
-    await CallLog.create({ phoneNumber: appt.phoneNumber, intent: "reschedule", outcome: "rescheduled" });
-
-    res.json({ message: "Appointment rescheduled", appointment: appt });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    res.json({ success: true, data: appointment });
+  } catch (error) {
+    next(error);
+  }
 };
 
-exports.findByPhone = async (req, res) => {
+// PATCH /api/appointments/cancel — cancel by phone + doctorId + date (AI service calls this)
+const cancelAppointment = async (req, res, next) => {
   try {
-    const appts = await Appointment.find({
-      phoneNumber: req.params.phone,
-      status: { $in: ["booked", "rescheduled"] },
-    }).populate("doctorId", "name specialization room").lean();
-    res.json(appts);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const { phone, doctorId, date } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Phone number is required' });
+    }
+
+    const filter = {
+      patientPhone: phone,
+      status: { $in: [APPOINTMENT_STATUS.BOOKED, APPOINTMENT_STATUS.CONFIRMED] },
+    };
+
+    if (doctorId) filter.doctorId = doctorId;
+    if (date) filter.date = date;
+
+    // Find the most recent matching appointment
+    const appointment = await Appointment.findOne(filter).sort({ date: 1, time: 1 });
+
+    if (!appointment) {
+      return res.status(404).json({
+        success: false,
+        message: 'No active appointment found for this patient',
+      });
+    }
+
+    appointment.status = APPOINTMENT_STATUS.CANCELLED;
+    await appointment.save();
+
+    // Free up the doctor's slot
+    const doctor = await Doctor.findById(appointment.doctorId);
+    if (doctor && doctor.availableSlots && doctor.availableSlots.has(appointment.date)) {
+      const slots = doctor.availableSlots.get(appointment.date);
+      const slotIndex = slots.findIndex((s) => s.time === appointment.time);
+      if (slotIndex !== -1) {
+        slots[slotIndex].isBooked = false;
+        slots[slotIndex].appointmentId = undefined;
+        doctor.availableSlots.set(appointment.date, slots);
+        await doctor.save();
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Appointment cancelled successfully',
+      data: appointment,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/appointments/:id/reschedule
+const rescheduleAppointment = async (req, res, next) => {
+  try {
+    const { date, time } = req.body;
+    if (!date || !time) {
+      return res.status(400).json({ success: false, message: 'New date and time are required' });
+    }
+
+    const appointment = await Appointment.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+
+    // Check if new slot is available
+    const slotTaken = await Appointment.findOne({
+      doctorId: appointment.doctorId,
+      date,
+      time,
+      status: { $in: [APPOINTMENT_STATUS.BOOKED, APPOINTMENT_STATUS.CONFIRMED] },
+      _id: { $ne: appointment._id },
+    });
+
+    if (slotTaken) {
+      return res.status(409).json({
+        success: false,
+        message: `Slot ${time} on ${date} is already booked`,
+      });
+    }
+
+    // Free old slot
+    const doctor = await Doctor.findById(appointment.doctorId);
+    if (doctor && doctor.availableSlots) {
+      // Free old
+      if (doctor.availableSlots.has(appointment.date)) {
+        const oldSlots = doctor.availableSlots.get(appointment.date);
+        const oldIdx = oldSlots.findIndex((s) => s.time === appointment.time);
+        if (oldIdx !== -1) {
+          oldSlots[oldIdx].isBooked = false;
+          oldSlots[oldIdx].appointmentId = undefined;
+          doctor.availableSlots.set(appointment.date, oldSlots);
+        }
+      }
+      // Book new
+      if (doctor.availableSlots.has(date)) {
+        const newSlots = doctor.availableSlots.get(date);
+        const newIdx = newSlots.findIndex((s) => s.time === time);
+        if (newIdx !== -1) {
+          newSlots[newIdx].isBooked = true;
+          newSlots[newIdx].appointmentId = appointment._id;
+          doctor.availableSlots.set(date, newSlots);
+        }
+      }
+      await doctor.save();
+    }
+
+    appointment.date = date;
+    appointment.time = time;
+    appointment.status = APPOINTMENT_STATUS.RESCHEDULED;
+    appointment.reminderSent = false;
+    await appointment.save();
+
+    res.json({
+      success: true,
+      message: 'Appointment rescheduled successfully',
+      data: appointment,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PATCH /api/appointments/:id/complete
+const completeAppointment = async (req, res, next) => {
+  try {
+    const appointment = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      { status: APPOINTMENT_STATUS.COMPLETED },
+      { new: true }
+    );
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    res.json({ success: true, message: 'Appointment completed', data: appointment });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  getAppointments,
+  getAppointmentById,
+  getPatientAppointments,
+  createAppointment,
+  updateAppointment,
+  cancelAppointment,
+  rescheduleAppointment,
+  completeAppointment,
 };
