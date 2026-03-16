@@ -1,0 +1,31 @@
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+
+app = FastAPI(title="MediVoice AI Service")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.post("/process")
+async def process_audio(request: Request):
+    """
+    Main endpoint called by Node.js backend.
+    Receives audio chunks, orchestrates AI pipeline, returns response.
+    """
+    # Pipeline:
+    # 1. stt_service -> text
+    # 2. language_detector -> language
+    # 3. intent_classifier -> intent
+    # 4. symptom_detector/doctor_router -> doctor
+    # 5. al_agent -> response generation
+    # 6. tts_service -> audio response
+    return {"status": "success", "message": "Voice processed"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
