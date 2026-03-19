@@ -1,7 +1,10 @@
 import axios from 'axios'
 
-const API = axios.create({ baseURL: 'http://localhost:5000/api' })
-const AI = axios.create({ baseURL: 'http://localhost:6001/api' })
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const AI_URL = import.meta.env.VITE_AI_REST_URL || 'http://localhost:8000'
+
+const API = axios.create({ baseURL: API_URL })
+const AI = axios.create({ baseURL: AI_URL })
 
 API.interceptors.request.use(
   (config) => {
@@ -34,6 +37,7 @@ export const updateDoctor = (id, data) => API.put(`/doctors/${id}`, data)
 export const deleteDoctor = (id) => API.put(`/doctors/${id}`, { isAvailable: false })
 export const getAvailableDoctors = (spec, date) =>
   API.get('/doctors/available', { params: { specialization: spec, date } })
+export const searchDoctors = (name) => API.get('/doctors/search', { params: { name } })
 
 // Appointments
 export const getAppointments = () => API.get('/appointments')
@@ -44,10 +48,15 @@ export const getPatientAppointments = (phone) => API.get(`/appointments/patient/
 // Analytics
 export const getAnalytics = () => API.get('/analytics/dashboard')
 
-// Call Logs — backend route is /api/calls, not /api/calllogs
+// Call Logs
 export const getCallLogs = () => API.get('/calls')
 export const getCallLogById = (id) => API.get(`/calls/${id}`)
 
-// AI Voice
-export const sendVoiceMessage = (data) => AI.post('/voice/chat', data)
-export const endVoiceSession = (data) => AI.post('/voice/end-session', data)
+// AI Service — Direct calls (text mode)
+export const sendTextToAI = (data) => AI.post('/process-text', data)
+export const getAIHealth = () => AI.get('/health')
+export const chatWithAI = async (text, sessionId, language) => {
+  const response = await AI.post('/process-text', { text, session_id: sessionId, language })
+  return response.data
+}
+export const endAICall = (sessionId) => AI.post('/end-call', { session_id: sessionId })
