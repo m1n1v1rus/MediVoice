@@ -110,3 +110,17 @@ public/uploads/
 # Allow gitkeep files
 !.gitkeep
 !**/.gitkeep
+
+# Session data (runtime)
+ai-service/data/sessions/
+ai-service/data/patients/
+
+# Vite cache
+frontend/.vite/
+
+# Test outputs & logs
+ai-service/*.log
+ai-service/test_out.txt
+ai-service/chat_traceback.log
+ai-service/ai_err.log
+ai-service/err.log
