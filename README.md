@@ -322,7 +322,7 @@ MediVoice/
 │
 ├── docs/                        # Documentation & assets
 ├── LICENSE                      # MIT License
-└── README.md                    # You are here! 👋
+└── README.md                 
 ```
 
 ---
