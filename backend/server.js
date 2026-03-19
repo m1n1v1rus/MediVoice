@@ -21,6 +21,27 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const app = express();
 const server = http.createServer(app);
 
+// WebSocket to gRPC proxy
+const { WebSocketServer } = require('ws');
+const { handleAudioStream } = require('./grpcClient');
+
+const wss = new WebSocketServer({ noServer: true });
+
+wss.on('connection', (ws) => {
+  console.log('✅ New WebSocket connection for AI gRPC proxy');
+  handleAudioStream(ws);
+});
+
+// Let Socket.io handle default upgrades, but intercept /ws/ai
+server.on('upgrade', (request, socket, head) => {
+  const { pathname } = new URL(request.url, `http://${request.headers.host}`);
+  if (pathname === '/ws/ai') {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  }
+});
+
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || '*',
@@ -73,6 +94,7 @@ process.on('SIGTERM', () => {
 
 process.on('unhandledRejection', (err) => {
   console.error('❌ Unhandled Rejection:', err.message);
+  server.close(() => process.exit(1)); // Ensures nodemon restarts automatically
 });
 
 process.on('uncaughtException', (err) => {
