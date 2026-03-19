@@ -106,7 +106,17 @@ const getCallLogs = async (req, res, next) => {
 // GET /api/calls/:sessionId
 const getCallBySession = async (req, res, next) => {
   try {
-    const call = await CallLog.findOne({ sessionId: req.params.sessionId }).lean();
+    const { sessionId: id } = req.params;
+    
+    // Check if it's a valid ObjectId
+    const isValidObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    
+    let query = { sessionId: id };
+    if (isValidObjectId) {
+      query = { $or: [{ _id: id }, { sessionId: id }] };
+    }
+    
+    const call = await CallLog.findOne(query).lean();
     if (!call) {
       return res.status(404).json({ success: false, message: 'Call log not found' });
     }
