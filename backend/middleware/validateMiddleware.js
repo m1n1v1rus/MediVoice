@@ -23,8 +23,8 @@ const validateAppointment = [
     .trim()
     .notEmpty()
     .withMessage('Phone number is required')
-    .matches(/^[0-9]{10,15}$/)
-    .withMessage('Invalid phone number'),
+    .matches(/^\+?[0-9]{10,15}$/)
+    .withMessage('Invalid phone number (must be 10-15 digits, optional + prefix)'),
   body('doctorId')
     .notEmpty()
     .withMessage('Doctor ID is required')
@@ -67,8 +67,8 @@ const validatePhone = [
     .trim()
     .notEmpty()
     .withMessage('Phone is required')
-    .matches(/^[0-9]{10,15}$/)
-    .withMessage('Invalid phone number'),
+    .matches(/^\+?[0-9]{10,15}$/)
+    .withMessage('Invalid phone number (must be 10-15 digits, optional + prefix)'),
   handleValidation,
 ];
 
