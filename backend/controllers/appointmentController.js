@@ -2,6 +2,7 @@ const Appointment = require('../models/Appointment');
 const Doctor = require('../models/Doctor');
 const Patient = require('../models/Patient');
 const { APPOINTMENT_STATUS } = require('../config/constants');
+const { sendSMS } = require('../services/smsService');
 
 // GET /api/appointments — admin, filter by date/status/phone/doctor
 const getAppointments = async (req, res, next) => {
@@ -157,6 +158,14 @@ const createAppointment = async (req, res, next) => {
     const populatedAppointment = await Appointment.findById(appointment._id)
       .populate('doctorId', 'name specialization room fee')
       .lean();
+
+    // 7. 🔔 Send SMS confirmation to patient (async, non-blocking)
+    if (patientPhone) {
+      const smsMsg = `✅ Appointment Confirmed!\n\nPatient: ${patientName}\nDoctor: ${doctorName || doctor.name}\nDate: ${date}\nTime: ${time}\nHospital: ${process.env.HOSPITAL_NAME || 'MediVoice Hospital'}\n\nPlease arrive 10 minutes early. For reschedule/cancel, call us anytime.`;
+      sendSMS(patientPhone, smsMsg)
+        .then((r) => console.log(`📱 SMS ${r.success ? 'sent' : 'failed'}: ${patientPhone}`))
+        .catch((e) => console.error('SMS error:', e.message));
+    }
 
     res.status(201).json({
       success: true,
