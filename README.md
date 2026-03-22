@@ -205,7 +205,7 @@ cd MediVoice
 ```bash
 cd backend
 npm install
-cp .env.example .env   # Edit with your MongoDB URI, JWT secret, etc.
+cp .env.example .env   #  MongoDB URI, JWT secret, etc.
 node seed-doctors.js    # Seed sample doctors
 npm run dev             # Starts on port 5000
 ```
