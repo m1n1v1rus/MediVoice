@@ -49,12 +49,11 @@
 <a id="see-it-in-action"></a>
 ## 🎥 See it in Action
 
-<p align="center">
-  <strong>MediVoice 9-Second Action Demo</strong><br>
-  <video src="https://github.com/m1n1v1rus/MediVoice/blob/main/docs/demo-video-4k.mp4?raw=true" controls="controls" autoplay="autoplay" loop="loop" muted="muted" playsinline="playsinline" width="85%">
-    Your browser does not support the video tag.
-  </video>
-</p>
+**MediVoice 9-Second Action Demo (4K)**
+
+<video src="docs/demo-video-4k.mp4" width="100%" controls autoplay loop muted></video>
+
+*(If the video player doesn't load above, [click here to watch the 4K Demo](https://github.com/m1n1v1rus/MediVoice/raw/main/docs/demo-video-4k.mp4))*
 
 ### 🗣️ Example Patient-AI Interaction
 
