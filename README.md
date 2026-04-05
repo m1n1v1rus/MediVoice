@@ -51,7 +51,7 @@
 
 **MediVoice 9-Second Action Demo (4K)**
 
-<video src="docs/demo-video-4k.mp4" width="100%" controls autoplay loop muted></video>
+https://github.com/m1n1v1rus/MediVoice/raw/main/docs/demo-video-4k.mp4
 
 *(If the video player doesn't load above, [click here to watch the 4K Demo](https://github.com/m1n1v1rus/MediVoice/raw/main/docs/demo-video-4k.mp4))*
 
