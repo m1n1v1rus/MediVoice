@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/medivoice-banner.png" alt="MediVoice Banner" width="100%" />
+  <img src="docs/medivoice-banner-cropped.png" alt="MediVoice Banner" width="100%" />
 </p>
 
 <h1 align="center">🏥 MediVoice</h1>
@@ -7,6 +7,12 @@
 <p align="center">
   <strong>AI-Powered Voice Receptionist for Clinics & Hospitals</strong><br/>
   <em>Built for the Murf AI Hackathon 🏆</em>
+</p>
+
+<p align="center">
+  <a href="https://drive.google.com/file/d/1lNzSl0UAWootEPWVgMeL7wyixngBpgw9/view?usp=sharing" target="_blank">
+    <img src="https://img.shields.io/badge/▶_Watch_Project_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo Video" />
+  </a>
 </p>
 
 <p align="center">
@@ -20,17 +26,18 @@
 </p>
 
 <p align="center">
-  <a href="#-features">Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-tech-stack">Tech Stack</a> •
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-api-reference">API</a> •
-  <a href="#-team">Team</a> •
-  <a href="#-future-roadmap">Roadmap</a>
+  <a href="#features">Features</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="#tech-stack">Tech Stack</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#api-reference">API</a> •
+  <a href="#team">Team</a> •
+  <a href="#future-roadmap">Roadmap</a>
 </p>
 
 ---
 
+<a id="problem-statement"></a>
 ## 📌 Problem Statement
 
 > In India, **65%+ clinics** still rely on manual phone receptionists who miss calls, double-book appointments, and struggle during peak hours. Patients spend **15-30 minutes** on hold, leading to frustration, lost revenue, and delayed care.
@@ -39,6 +46,44 @@
 
 ---
 
+<a id="see-it-in-action"></a>
+## 🎥 See it in Action
+
+<p align="center">
+  <strong>MediVoice 9-Second Action Demo</strong><br>
+  <video src="docs/demo-video-4k.mp4" controls="controls" autoplay loop muted playsinline width="85%" style="border-radius: 10px; border: 2px solid #00d4ff;">
+    Your browser does not support the video tag.
+  </video>
+</p>
+
+### 🗣️ Example Patient-AI Interaction
+
+**🧑 Patient:** "Hello, I want to book an appointment with a dentist for tomorrow."<br/>
+**🤖 MediVoice:** *"Hi there! I can help you with that. Dr. Sharma is available tomorrow at 10:00 AM or 4:00 PM. Which time works best for you?"*<br/>
+**🧑 Patient:** "10:00 AM is fine."<br/>
+**🤖 MediVoice:** *"Great! Could you please tell me your full name and contact number?"*<br/>
+**🧑 Patient:** "Ayush, my number is 9988XXXXXX."<br/>
+**🤖 MediVoice:** *"Perfect, Ayush. Your appointment with Dr. Sharma is confirmed for tomorrow at 10:00 AM. A confirmation SMS will be sent to you shortly. Have a great day!"*
+
+---
+
+## 📑 Table of Contents
+
+- [📌 Problem Statement](#problem-statement)
+- [🎥 See it in Action](#see-it-in-action)
+- [✨ Features](#features)
+- [🏗️ Architecture](#architecture)
+- [🛠️ Tech Stack](#tech-stack)
+- [🚀 Quick Start](#quick-start)
+- [📡 API Reference](#api-reference)
+- [📂 Project Structure](#project-structure)
+- [🔄 Voice Call Pipeline](#voice-call-pipeline)
+- [👥 Team](#team)
+- [🚀 Future Roadmap](#future-roadmap)
+
+---
+
+<a id="features"></a>
 ## ✨ Features
 
 ### 🎙️ Real-Time Voice Conversations
@@ -83,6 +128,7 @@
 
 ---
 
+<a id="architecture"></a>
 ## 🏗️ Architecture
 
 ```
@@ -131,6 +177,7 @@
 
 ---
 
+<a id="tech-stack"></a>
 ## 🛠️ Tech Stack
 
 <table>
@@ -184,6 +231,7 @@
 
 ---
 
+<a id="quick-start"></a>
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -240,6 +288,7 @@ http://localhost:5173
 
 ---
 
+<a id="api-reference"></a>
 ## 📡 API Reference
 
 ### Voice Call (WebSocket)
@@ -277,6 +326,7 @@ GET    /api/calls                 → Call history & logs
 
 ---
 
+<a id="project-structure"></a>
 ## 📂 Project Structure
 
 ```
@@ -322,11 +372,12 @@ MediVoice/
 │
 ├── docs/                        # Documentation & assets
 ├── LICENSE                      # MIT License
-└── README.md                 
+└── README.md                  
 ```
 
 ---
 
+<a id="voice-call-pipeline"></a>
 ## 🔄 Voice Call Pipeline
 
 ```
@@ -370,6 +421,7 @@ Patient hears AI response
 
 ---
 
+<a id="team"></a>
 ## 👥 Team
 
 <table>
@@ -419,6 +471,7 @@ Patient hears AI response
 
 ---
 
+<a id="future-roadmap"></a>
 ## 🚀 Future Roadmap
 
 <table>
@@ -529,3 +582,4 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 <p align="center">
   <strong>⭐ Star this repo if you found it useful!</strong>
 </p>
+
