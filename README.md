@@ -51,7 +51,7 @@
 
 <p align="center">
   <strong>MediVoice 9-Second Action Demo</strong><br>
-  <video src="docs/demo-video-4k.mp4" controls="controls" autoplay loop muted playsinline width="85%" style="border-radius: 10px; border: 2px solid #00d4ff;">
+  <video src="https://github.com/m1n1v1rus/MediVoice/blob/main/docs/demo-video-4k.mp4?raw=true" controls="controls" autoplay="autoplay" loop="loop" muted="muted" playsinline="playsinline" width="85%">
     Your browser does not support the video tag.
   </video>
 </p>
