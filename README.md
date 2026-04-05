@@ -19,7 +19,7 @@
   <a href="https://github.com/m1n1v1rus/MediVoice/stargazers"><img src="https://img.shields.io/github/stars/m1n1v1rus/MediVoice?style=for-the-badge&logo=github&color=f5c542" alt="Stars" /></a>
   <a href="https://github.com/m1n1v1rus/MediVoice/blob/main/LICENSE"><img src="https://img.shields.io/github/license/m1n1v1rus/MediVoice?style=for-the-badge&color=00d4ff" alt="License" /></a>
   <a href="https://github.com/m1n1v1rus/MediVoice/issues"><img src="https://img.shields.io/github/issues/m1n1v1rus/MediVoice?style=for-the-badge&color=7c3aed" alt="Issues" /></a>
-  <a href="https://github.com/m1n1v1rus/MediVoice/commits"><img src="https://img.shields.io/github/commit-activity/t/m1n1v1rus/MediVoice?style=for-the-badge&color=00c853" alt="Commits" /></a>
+  <a href="https://github.com/m1n1v1rus/MediVoice/commits"><img src="https://img.shields.io/github/commit-activity/m/m1n1v1rus/MediVoice?style=for-the-badge&color=00c853" alt="Commits" /></a>
   <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" />
   <img src="https://img.shields.io/badge/React-18+-61dafb?style=for-the-badge&logo=react&logoColor=black" alt="React" />
