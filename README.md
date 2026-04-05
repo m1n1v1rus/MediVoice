@@ -49,11 +49,13 @@
 <a id="see-it-in-action"></a>
 ## 🎥 See it in Action
 
-**MediVoice 9-Second Action Demo (4K)**
+**MediVoice 9-Second Action Demo**
 
-https://github.com/m1n1v1rus/MediVoice/raw/main/docs/demo-video-4k.mp4
+<p align="center">
+  <img src="docs/demo-video-optimized.gif" alt="MediVoice 9-Second Action Demo" width="100%" />
+</p>
 
-*(If the video player doesn't load above, [click here to watch the 4K Demo](https://github.com/m1n1v1rus/MediVoice/raw/main/docs/demo-video-4k.mp4))*
+*(Want the full 4K experience? [Watch or Download the 4K Video Here](https://github.com/m1n1v1rus/MediVoice/raw/main/docs/demo-video-4k.mp4))*
 
 ### 🗣️ Example Patient-AI Interaction
 
